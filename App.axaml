@@ -10,7 +10,7 @@ Copyright (c) 2024, VLDG2712
 
 
 
-Application xmlns="https://github.com/avaloniaui"
+<Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="YT2MP3Sharp.App"
              RequestedThemeVariant="Default">

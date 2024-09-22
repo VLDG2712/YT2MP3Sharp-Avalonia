@@ -13,6 +13,7 @@ using Avalonia.Interactivity;
 using Tmds.DBus.Protocol;
 using System.Threading.Tasks;
 using YoutubeExplode;
+using YoutubeExplode.Videos.Streams;
 
 namespace YT2MP3Sharp;
 
