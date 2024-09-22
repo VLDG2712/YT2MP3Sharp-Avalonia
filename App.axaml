@@ -1,4 +1,16 @@
-<Application xmlns="https://github.com/avaloniaui"
+<!-- /*
+ * 
+Copyright (c) 2024, VLDG2712
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. 
+ * 
+ */-->
+
+
+
+Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="YT2MP3Sharp.App"
              RequestedThemeVariant="Default">
