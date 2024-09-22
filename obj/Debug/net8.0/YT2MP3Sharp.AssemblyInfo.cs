@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("YT2MP3Sharp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5337e7a12e355b8aa19214e6d03ae57b96ffc4b6")]
 [assembly: System.Reflection.AssemblyProductAttribute("YT2MP3Sharp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("YT2MP3Sharp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
