@@ -3,3 +3,4 @@ bin
 .conf
 .exe
 obj
+.vscode/
