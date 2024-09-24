@@ -20,5 +20,5 @@ to
 
 ```var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg.exe");```
 
-Download [ffmpeg](https://www.ffmpeg.org/download.html) from [here](https://www.ffmpeg.org/download.html).
+Download ffmpeg from [here](https://www.ffmpeg.org/download.html).
 
