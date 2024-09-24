@@ -8,6 +8,7 @@ To build do:
 - then in Resources folder create a folder named ffmpeg
 - and in the ffmpeg folder put the ffmpeg executable for the target ur using windows or linux
 <h4>!Tip! to build on Windows, you have to modify the line where the process is executed, from 'ffmpeg' to 'ffmpeg.exe' like this:</h4>
+
 ```var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg");```
 
 to
