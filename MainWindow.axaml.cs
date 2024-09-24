@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        logpane.Text = "Ready...\n";
     }
     public async Task SelectFolder(Window parentWindow)
     {
@@ -50,6 +51,7 @@ public partial class MainWindow : Window
             using (StreamWriter outputFile = new StreamWriter(Path.Combine(confPath, "settings.conf")))
             {
                 await outputFile.WriteAsync(selectedFolder.Path.LocalPath);
+                await Dispatcher.UIThread.InvokeAsync(() => spath.Content = selectedFolder.Path.LocalPath);
             }
 
         }
@@ -66,11 +68,10 @@ public partial class MainWindow : Window
 
         string path = File.ReadAllText($"{System.AppDomain.CurrentDomain.BaseDirectory}settings.conf");
         string url = urlTxt.Text;
-        logpane.Text = "";
-        progressbar.Value = 0;
+        await Dispatcher.UIThread.InvokeAsync(() => progressbar.Value = 0);
         
         if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(path)){
-            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = "Please fill in All the Fields\n");
+            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += "Please fill in All the Fields\n");
             return;
         }
 
@@ -89,14 +90,14 @@ public partial class MainWindow : Window
 
         catch (Exception ex)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Error: {ex.Message}\n");
+            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Error: {ex.Message}\n");
         }
     }
     private async Task DownloadVideoAsync(string url, string outputPath, string format)
     {
         try
         {
-            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = "Fetching Video Information\n");
+            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += "Fetching Video Information\n");
             var youtube = new YoutubeClient();
 
             var video = await youtube.Videos.GetAsync(url);
@@ -111,12 +112,12 @@ public partial class MainWindow : Window
                     var sanitizedTitle = SanitizeFileName(video.Title);
                     var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
 
-                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Downloading: {video.Title}\n");
+                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Downloading: {video.Title}\n");
                     await youtube.Videos.Streams.DownloadAsync(streamInfo, finalFilePath);
                 }
                 else 
                 {
-                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = "No suitable stream found\n");
+                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += "No suitable stream found\n");
                 }
             }
             else if (format == "MP3")
@@ -129,30 +130,30 @@ public partial class MainWindow : Window
                     var tempFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
                     var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp3");
 
-                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Downloading: {video.Title}\n");
+                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Downloading: {video.Title}\n");
                     await youtube.Videos.Streams.DownloadAsync(streamInfo, tempFilePath);
-                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Converting: {video.Title}\n");
+                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Converting: {video.Title}\n");
 
                     await Task.Run(() =>ConvertToMp3(tempFilePath, finalFilePath));
 
-                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Download Complete: {finalFilePath}\n");
+                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Download Complete: {finalFilePath}\n");
                 }
                 else
                 {
-                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = "No suitable audio stream found! \n");
+                    await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += "No suitable audio stream found! \n");
                 }
             }
         }
         catch (Exception ex)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Error: {ex.Message}\n");
+            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Error: {ex.Message}\n");
         }
     }
     private async Task DownloadPlaylistAsync(string playlistUrl, string outputPath, string format)
     {
         try
         {
-            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = "Fetching playlist information...\n");
+            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += "Fetching playlist information...\n");
             var youtube = new YoutubeClient();
             var playlist = await youtube.Playlists.GetAsync(playlistUrl);
             var videos = youtube.Playlists.GetVideosAsync(playlist.Id);
@@ -163,7 +164,7 @@ public partial class MainWindow : Window
                 videoCount++;
             }
             await Dispatcher.UIThread.InvokeAsync(() => progressbar.Maximum = videoCount);
-            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Found {videoCount} videos\n");
+            await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Found {videoCount} videos\n");
 
             var tasks = new ConcurrentBag<Task>();
             var throttler = new SemaphoreSlim(3); // TO DO SETTINGS CONCURENT DOWNLOADS
@@ -184,16 +185,16 @@ public partial class MainWindow : Window
                             {
                                 var sanitizedTitle = SanitizeFileName(video.Title);
                                 var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
-                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Downloading: {video.Title}\n");
+                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Downloading: {video.Title}\n");
                                 
                                 //DownloadAsync
                                 await youtube.Videos.Streams.DownloadAsync(streamInfo, finalFilePath);
-                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Download complete: {finalFilePath}\n");
+                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Download complete: {finalFilePath}\n");
 
                             }
                             else
                             {
-                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"No suitable stream found! for {video.Title}\n");
+                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"No suitable stream found! for {video.Title}\n");
                             }
                         }
                         else if (format == "MP3")
@@ -205,25 +206,27 @@ public partial class MainWindow : Window
                                 var sanitizedTitle = SanitizeFileName(video.Title);
                                 var tempFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
                                 var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp3");
-                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Download: {video.Title}\n");
+                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Download: {video.Title}\n");
 
                                 // Download Async
                                 await youtube.Videos.Streams.DownloadAsync(streamInfo, tempFilePath);
-                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Converting: {video.Title}\n");
+                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Converting: {video.Title}\n");
 
                                 // Convert To MP3 Async
                                 await Task.Run(() => ConvertToMp3(tempFilePath, finalFilePath));
-                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Download complete: {finalFilePath}\n");
+                                await Dispatcher.UIThread.InvokeAsync(() => {
+                                    logpane.Text += $"Download complete: {finalFilePath}\n";
+                                    logpane.CaretIndex = logpane.Text.Length;});
                             }
                             else 
                             {
-                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"No suitable audio stream found for: {video.Title}\n");
+                                await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"No suitable audio stream found for: {video.Title}\n");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Error Downloading: {video.Title} > {ex.Message}\n");
+                        await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Error Downloading: {video.Title} > {ex.Message}\n");
                     }
                     finally
                     {
@@ -236,7 +239,7 @@ public partial class MainWindow : Window
        }
        catch (Exception ex)
        {
-        await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"Error: {ex.Message}\n");
+        await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"Error: {ex.Message}\n");
        }
     }
     private void ConvertToMp3(string inputFilePath, string outputFilePath)
@@ -249,22 +252,20 @@ public partial class MainWindow : Window
         var processStartInfo = new ProcessStartInfo
         {
             FileName = ffmpegPath,
-            Arguments = $"-i \"{inputFilePath}\" -threads {coreCount} -vn -ar 44100 -ac 2 -b:a 320k \"{outputFilePath}\"",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
+            Arguments = $"-i \"{inputFilePath}\" -threads {coreCount} -vn -ar 44100 -ac 2 -b:a 320k \"{outputFilePath}\" -y",
             UseShellExecute = false,
             CreateNoWindow = true
         };
 
         using (var process = new Process { StartInfo = processStartInfo})
         {
-            process.OutputDataReceived += async (sender, args) => { if (args.Data != null) await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"{args.Data}\n");};
-            process.ErrorDataReceived += async (sender, args) => { if (args.Data != null) await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = $"{args.Data}\n");};
+            process.OutputDataReceived += async (sender, args) => { if (args.Data != null) await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"{args.Data}\n");};
+            process.ErrorDataReceived += async (sender, args) => { if (args.Data != null) await Dispatcher.UIThread.InvokeAsync(() => logpane.Text += $"{args.Data}\n");};
 
         
             process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+           // process.BeginOutputReadLine();
+           // process.BeginErrorReadLine();
             process.WaitForExit();
         }
         File.Delete(inputFilePath); // Deletes File After Conversion!
