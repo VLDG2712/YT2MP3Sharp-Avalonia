@@ -21,7 +21,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using System.Formats.Asn1;
 
 namespace YT2MP3Sharp;
 
