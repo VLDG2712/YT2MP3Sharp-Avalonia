@@ -6,9 +6,9 @@ To build do:
 - ```dotnet build -c Release```
 - go to Release folder and create a folder structure like this:
   ```
-  Resources
+  Resources/
   |
-    ffmpeg
+    ffmpeg/
       |
         ffmpeg or ffmpeg.exe (depending on target ur using)
   ```
