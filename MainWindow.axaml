@@ -19,18 +19,20 @@ Copyright (c) 2024, VLDG2712
 
 
     <StackPanel Margin="10">
-        <TextBlock Margin="10 10"> YouTube Song or Playlist URL: </TextBlock>
-        <TextBox x:Name="search_bar" Margin="10 10"/>
-        <Button Click="DoDownload">Download</Button>
-        <TextBlock Margin="0 10" x:Name="message">Ready...</TextBlock>
-        <ProgressBar  Margin="0 10" Height="10"
-            Minimum="0" Maximum="100" Value="92"
+        <!-- TextBlock Margin="10 10"> YouTube Song or Playlist URL: </TextBlock -->
+        <TextBox Watermark="YouTube Song or Playlist URL: " x:Name="urlTxt" Margin="10 10"/>
+        <Button Click="downloadbtn">Download</Button>
+        <TextBox Margin="0 10" Height="100" TextWrapping="Wrap" x:Name="logpane">Ready...</TextBox>
+        <ProgressBar x:Name="progressbar" Margin="0 10" Height="10"
+            Minimum="0" Maximum="100" Value="1"
             Foreground="#189fed"
             ShowProgressText="False"/>
         <ComboBox Margin="10 10" x:Name="formatbox" SelectedIndex="0" MaxDropDownHeight="100">
             <ComboBoxItem>MP3</ComboBoxItem>
             <ComboBoxItem>MP4</ComboBoxItem>
         </ComboBox>
+        <Button Click="SelectFolderButton_Click">Open</Button>
+        <!--TextBox Watermark="Save Path: " x:Name="spath" Margin="10 10"/-->
 
     </StackPanel>
 </Window>
