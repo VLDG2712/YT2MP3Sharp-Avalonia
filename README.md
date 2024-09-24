@@ -2,8 +2,8 @@ YT2MP3Sharp is a app built by me as there are not to many out there
 This is just an UI written in C# with AvaloniaUI, YoutubeExplode libraries and ffmpeg as dependency
 
 To build do:
-- dotnet restore
-- dotnet build -c Release
+- ```dotnet restore```
+- ```dotnet build -c Release```
 - go to Release folder and create a folder named Resources
 - then in Resources folder create a folder named ffmpeg
 - and in the ffmpeg folder put the ffmpeg executable for the target ur using windows or linux
