@@ -30,7 +30,6 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
     }
-
     public async Task SelectFolder(Window parentWindow)
     {
         // Create an instance of FilePickerFolderOptions
@@ -61,19 +60,19 @@ public partial class MainWindow : Window
         
     }
 
-    
+
     private async void downloadbtn(object sender, RoutedEventArgs args)
     {
 
         string path = File.ReadAllText($"{System.AppDomain.CurrentDomain.BaseDirectory}settings.conf");
         string url = urlTxt.Text;
-
+        logpane.Text = "";
+        progressbar.Value = 0;
+        
         if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(path)){
             await Dispatcher.UIThread.InvokeAsync(() => logpane.Text = "Please fill in All the Fields\n");
             return;
         }
-    logpane.Text = "";
-    progressbar.Value = 0;
 
         string format = (formatbox.SelectedItem as ComboBoxItem)?.Content?.ToString();
         try 
