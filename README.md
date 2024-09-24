@@ -1,4 +1,4 @@
-YT2MP3Sharp is a app built by me as there are not to many out there
+YT2MP3Sharp is an app built by me as there are not to many out there :wink:
 This is just an UI written in C# with AvaloniaUI, YoutubeExplode libraries and ffmpeg as dependency
 
 To build do:
