@@ -268,7 +268,7 @@ public partial class MainWindow : Window
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             process.WaitForExit();
-        }//gitpushnotworking?
+        }
         File.Delete(inputFilePath); // Deletes File After Conversion!
     }
     private string SanitizeFileName(string fileName)
