@@ -48,7 +48,7 @@ public partial class MainWindow : Window
             // Handle the selected folder
             var selectedFolder = result[0];
             string confPath = System.AppDomain.CurrentDomain.BaseDirectory;
-            using (StreamWriter outputFile = new StreamWriter(Path.Combine(confPath, "settings.conf")))
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(confPath, "settings.dat")))
             {
                 await outputFile.WriteAsync(selectedFolder.Path.LocalPath);
                 await Dispatcher.UIThread.InvokeAsync(() => spath.Content = selectedFolder.Path.LocalPath);
@@ -66,7 +66,7 @@ public partial class MainWindow : Window
     private async void downloadbtn(object sender, RoutedEventArgs args)
     {
 
-        string path = File.ReadAllText($"{System.AppDomain.CurrentDomain.BaseDirectory}settings.conf");
+        string path = File.ReadAllText($"{System.AppDomain.CurrentDomain.BaseDirectory}settings.dat");
         string url = urlTxt.Text;
         await Dispatcher.UIThread.InvokeAsync(() => progressbar.Value = 0);
         
