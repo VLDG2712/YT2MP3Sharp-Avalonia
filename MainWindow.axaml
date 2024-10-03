@@ -14,72 +14,81 @@ Copyright (c) 2024, VLDG2712
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         Width="600" Height="550"
         x:Class="YT2MP3Sharp.MainWindow"
-        Background="{DynamicResource BackgroundColor}"
+        Background="#022b3a"
         Title="YT2MP3Sharp"
         CanResize="False">
-
+    
     <StackPanel Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" Width="500">
-        
         <!-- YouTube URL Input -->
-        <TextBox Watermark="YouTube Song or Playlist URL:" 
-                 x:Name="urlTxt" 
+        <TextBox Watermark="YouTube Song or Playlist URL" 
+                 x:Name="UrlTxt" 
                  Margin="0 10 0 10" 
-                 Width="480"/>
-
-        <!-- Download Button -->
-        <Button Click="downloadbtn" 
-                Width="100" 
-                HorizontalAlignment="Center" 
-                Margin="0 10 0 0">
-            Download
-        </Button>
-
+                 Width="480"
+                 Background="#1f7a8c"
+                 HorizontalContentAlignment="Center"/>
+        
         <!-- Log Panel (Multiline Textbox) -->
         <TextBox Margin="0 10" 
                  Height="200" 
                  TextWrapping="Wrap" 
                  IsReadOnly="True" 
                  AcceptsReturn="True" 
-                 x:Name="logpane"
+                 x:Name="Logpane"
                  HorizontalAlignment="Stretch"
-                 VerticalAlignment="Top">
-        </TextBox>
+                 VerticalAlignment="Top"
+                 Background="#1F7A8C"
+                 HorizontalContentAlignment="Center"/>
 
         <!-- Progress Bar -->
-        <ProgressBar x:Name="progressbar" 
+        <ProgressBar x:Name="Progressbar" 
                      Margin="0 10" 
                      Height="10"
                      Minimum="0" 
                      Maximum="100" 
                      Value="0"
-                     Foreground="#189fed"
+                     Foreground="#e1e5f2"
                      HorizontalAlignment="Stretch"
-                     ShowProgressText="False"/>
+                     ShowProgressText="False"
+                     Background="#1f7a8c"/>
 
         <!-- Format Selection ComboBox -->
         <ComboBox Margin="0 10" 
-                  x:Name="formatbox" 
+                  x:Name="Formatbox" 
                   SelectedIndex="0" 
                   MaxDropDownHeight="100"
                   Width="100"
-                  HorizontalAlignment="Center">
-            <ComboBoxItem>MP3</ComboBoxItem>
-            <ComboBoxItem>MP4</ComboBoxItem>
+                  HorizontalAlignment="Center"
+                  Background="#1f7a8c"
+                  HorizontalContentAlignment="Center">
+            <ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c">MP3</ComboBoxItem>
+            <ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c" IsEnabled="False">MP4</ComboBoxItem>
         </ComboBox>
 
         <!-- Open Folder Button -->
         <Button Click="SelectFolderButton_Click" 
                 Width="100" 
                 HorizontalAlignment="Center"
-                Margin="0 10">
-            Open
+                Margin="0 10"
+                Background="#1f7a8c"
+                HorizontalContentAlignment="Center">
+            Save To
         </Button>
-
+        <!-- Download Button -->
+        <Button Click="downloadbtn" 
+                Width="100" 
+                HorizontalAlignment="Center" 
+                Margin="0 10 0 0"
+                Background="#1F7A8C"
+                HorizontalContentAlignment="Center">
+            Download
+        </Button>
+        <Border BorderBrush="#1f7a8c" BorderThickness="0 0 0 1" Margin="0 55 0 0 "/>
         <!-- Selected Path Display -->
-        <Label x:Name="spath" 
-               Margin="0 10" 
-               HorizontalAlignment="Center">
-            ./ 
+        <Label x:Name="Spath" 
+               Margin="0 0 0 0" 
+               HorizontalAlignment="Center"
+               VerticalAlignment="Bottom">
+            ~
         </Label>
 
     </StackPanel>
