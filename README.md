@@ -13,13 +13,13 @@ To build do:
       |
         ffmpeg or ffmpeg.exe (depending on target ur using)
   ```
-<h4>!Tip! to build on Windows, you have to modify the line where the process is executed, from 'ffmpeg' to 'ffmpeg.exe' like this:</h4>
+~~<h4>!Tip! to build on Windows, you have to modify the line where the process is executed, from 'ffmpeg' to 'ffmpeg.exe' like this:</h4>~~
 
-```var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg");```
+~~```var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg");```~~
 
-to
+~~to~~
 
-```var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg.exe");```
+~~```var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg.exe");```~~
 
 Download ffmpeg from [here](https://www.ffmpeg.org/download.html).
 
