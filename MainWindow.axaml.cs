@@ -13,6 +13,7 @@ using Avalonia.Interactivity;
 using System.Threading.Tasks;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
+using YoutubeExplode.Converter;
 using System;
 using System.IO;
 using System.Linq;
@@ -108,23 +109,29 @@ public partial class MainWindow : Window
             {
                 case "MP4":
                 {
-                    var streamInfo = streamManifest.GetVideoOnlyStreams().TryGetWithHighestVideoQuality();
+                        //   var streamInfo = streamManifest.GetVideoOnlyStreams().TryGetWithHighestVideoQuality();
+                        //  if (streamInfo != null)
+                        // {
+                        //    var sanitizedTitle = SanitizeFileName(video.Title);
+                        //     var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
+                        //     await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Downloading: {video.Title}\n");
+                        //     await youtube.Videos.Streams.DownloadAsync(streamInfo, finalFilePath);
+                        //  }
+                        // else 
+                        // {
+                        //     await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "No suitable stream found\n");
+                        // }
+                        // break;
 
-                    if (streamInfo != null)
-                    {
-                        var sanitizedTitle = SanitizeFileName(video.Title);
-                        var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
+                        var audioStreamInfo = streamManifest
+                        .GetAudioStreams()
+                        .Where(s => s.Container == Container.Mp4)
+                        .GetWithHighestBitrate();
 
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Downloading: {video.Title}\n");
-                        await youtube.Videos.Streams.DownloadAsync(streamInfo, finalFilePath);
+
+
+
                     }
-                    else 
-                    {
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "No suitable stream found\n");
-                    }
-
-                    break;
-                }
                 case "MP3":
                 {
                     var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
