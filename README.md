@@ -13,7 +13,7 @@ To build do:
       |
         ffmpeg or ffmpeg.exe (depending on target ur using)
   ```
-~~<h4>!Tip! to build on Windows, you have to modify the line where the process is executed, from 'ffmpeg' to 'ffmpeg.exe' like this:</h4>~~
+Not needed anymore!~~<h4>!Tip! to build on Windows, you have to modify the line where the process is executed, from 'ffmpeg' to 'ffmpeg.exe' like this:</h4>~~
 
 ~~```var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg");```~~
 
