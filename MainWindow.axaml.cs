@@ -1,7 +1,5 @@
 /*
  * 
-Copyright (c) 2024, VLDG2712
- * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree. 
@@ -316,12 +314,12 @@ public partial class MainWindow : Window
 
     private async void UrlTxt_LostFocus(object sender, RoutedEventArgs e)
     {
-        if (!string.IsNullOrEmpty(UrlTxt.Text) && )
+        if (!string.IsNullOrEmpty(UrlTxt.Text))
         try
             {
                 var availableQualities = await GetAvailableVideoQualitiesAsync(UrlTxt.Text);
                 Qualitybox.ItemsSource = availableQualities;
-                Qualitybox.SelectedIndex = 0
+                Qualitybox.SelectedIndex = 0;
             }
         catch (Exception ex)
             {
