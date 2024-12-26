@@ -12,84 +12,93 @@ Copyright (c) 2024, VLDG2712
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        Width="600" Height="550"
+        Width="600" Height="600"
         x:Class="YT2MP3Sharp.MainWindow"
         Background="#022b3a"
         Title="YT2MP3Sharp"
         CanResize="False">
-    
-    <StackPanel Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" Width="500">
-        <!-- YouTube URL Input -->
-        <TextBox Watermark="YouTube Song or Playlist URL" 
-                 x:Name="UrlTxt" 
-                 Margin="0 10 0 10" 
+
+	<StackPanel Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" Width="500">
+		<!-- YouTube URL Input -->
+		<TextBox Watermark="YouTube Song or Playlist URL"
+                 x:Name="UrlTxt"
+                 Margin="0 10 0 10"
                  Width="480"
                  Background="#1f7a8c"
-                 HorizontalContentAlignment="Center"/>
-        
-        <!-- Log Panel (Multiline Textbox) -->
-        <TextBox Margin="0 10" 
-                 Height="200" 
-                 TextWrapping="Wrap" 
-                 IsReadOnly="True" 
-                 AcceptsReturn="True" 
+                 HorizontalContentAlignment="Center"
+				 LostFocus="UrlTxt_LostFocus"/>
+
+		<!-- Log Panel (Multiline Textbox) -->
+		<TextBox Margin="0 10"
+                 Height="200"
+                 TextWrapping="Wrap"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
                  x:Name="Logpane"
                  HorizontalAlignment="Stretch"
                  VerticalAlignment="Top"
                  Background="#1F7A8C"
                  HorizontalContentAlignment="Center"/>
 
-        <!-- Progress Bar -->
-        <ProgressBar x:Name="Progressbar" 
-                     Margin="0 10" 
+		<!-- Progress Bar -->
+		<ProgressBar x:Name="Progressbar"
+                     Margin="0 10"
                      Height="10"
-                     Minimum="0" 
-                     Maximum="100" 
+                     Minimum="0"
+                     Maximum="100"
                      Value="0"
                      Foreground="#e1e5f2"
                      HorizontalAlignment="Stretch"
                      ShowProgressText="False"
                      Background="#1f7a8c"/>
 
-        <!-- Format Selection ComboBox -->
-        <ComboBox Margin="0 10" 
-                  x:Name="Formatbox" 
-                  SelectedIndex="0" 
+		<!-- Format Selection ComboBox -->
+		<ComboBox Margin="0 10"
+                  x:Name="Formatbox"
+                  SelectedIndex="0"
                   MaxDropDownHeight="100"
                   Width="100"
                   HorizontalAlignment="Center"
                   Background="#1f7a8c"
                   HorizontalContentAlignment="Center">
-            <ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c">MP3</ComboBoxItem>
-            <ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c" IsEnabled="False">MP4</ComboBoxItem>
-        </ComboBox>
+			<ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c">MP3</ComboBoxItem>
+			<ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c">MP4</ComboBoxItem>
+		</ComboBox>
+		<ComboBox Margin="0 10"
+				  x:Name="Qualitybox"
+				  SelectedIndex="0"
+				  Width="100"
+				  HorizontalAlignment="Center"
+				  Background="#1f7a8c"
+				  HorizontalContentAlignment="Center">
+		</ComboBox>
 
-        <!-- Open Folder Button -->
-        <Button Click="SelectFolderButton_Click" 
-                Width="100" 
+		<!-- Open Folder Button -->
+		<Button Click="SelectFolderButton_Click"
+                Width="100"
                 HorizontalAlignment="Center"
                 Margin="0 10"
                 Background="#1f7a8c"
                 HorizontalContentAlignment="Center">
-            Save To
-        </Button>
-        <!-- Download Button -->
-        <Button Click="downloadbtn" 
-                Width="100" 
-                HorizontalAlignment="Center" 
+			Save To
+		</Button>
+		<!-- Download Button -->
+		<Button Click="downloadbtn"
+                Width="100"
+                HorizontalAlignment="Center"
                 Margin="0 10 0 0"
-                Background="#1F7A8C"
+                Background="#1f7a8c"
                 HorizontalContentAlignment="Center">
-            Download
-        </Button>
-        <Border BorderBrush="#1f7a8c" BorderThickness="0 0 0 1" Margin="0 55 0 0 "/>
-        <!-- Selected Path Display -->
-        <Label x:Name="Spath" 
-               Margin="0 0 0 0" 
+			Download
+		</Button>
+		<Border BorderBrush="#1f7a8c" BorderThickness="0 0 0 1" Margin="0 55 0 0 "/>
+		<!-- Selected Path Display -->
+		<Label x:Name="Spath"
+               Margin="0 0 0 0"
                HorizontalAlignment="Center"
                VerticalAlignment="Bottom">
-            ~
-        </Label>
+			~
+		</Label>
 
-    </StackPanel>
+	</StackPanel>
 </Window>

@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Avalonia.Platform.Storage;
@@ -73,11 +74,12 @@ public partial class MainWindow : Window
         await Dispatcher.UIThread.InvokeAsync(() => Progressbar.Value = 0);
         
         if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(path)){
-            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "Please fill in All the Fields\n");
+            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "Please fill in all the fields and select your Saving Path\n");
             return;
         }
 
         string format = (Formatbox.SelectedItem as ComboBoxItem)?.Content?.ToString();
+        string selectedQuality = Qualitybox.SelectedItem as string;
         try 
         {
             if (url.Contains("playlist"))
@@ -86,7 +88,7 @@ public partial class MainWindow : Window
             }
             else 
             {
-                await Task.Run(() => DownloadVideoAsync(url, path, format));
+                await Task.Run(() => DownloadVideoAsync(url, path, format, selectedQuality));
             }
         }
 
@@ -95,7 +97,20 @@ public partial class MainWindow : Window
             await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error: {ex.Message}\n");
         }
     }
-    private async Task DownloadVideoAsync(string url, string outputPath, string format)
+    private async Task<List<string>> GetAvailableVideoQualitiesAsync(string url)
+    {
+        var youtube = new YoutubeClient();
+        var video = await youtube.Videos.GetAsync(url);
+        var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
+
+        var videoQualities = streamManifest
+            .GetVideoStreams()
+            .Select(s => s.VideoQuality.Label)
+            .Distinct()
+            .ToList();
+        return videoQualities;
+    }
+    private async Task DownloadVideoAsync(string url, string outputPath, string format, string selectedQuality)
     {
         try
         {
@@ -105,33 +120,57 @@ public partial class MainWindow : Window
             var video = await youtube.Videos.GetAsync(url);
             var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
 
+            var availableQualities = streamManifest
+                .GetVideoStreams()
+                .Select(s => s.VideoQuality.Label)
+                .Distinct()
+                .ToList();
+
+
+            if (!availableQualities.Contains(selectedQuality) && format != "MP3")
+            {
+                //selectedQuality = availableQualities.FirstOrDefault();
+                await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Selected quality {selectedQuality} not available. Falling back to default quality\n");
+            }
+
+
             switch (format)
             {
                 case "MP4":
                 {
-                        //   var streamInfo = streamManifest.GetVideoOnlyStreams().TryGetWithHighestVideoQuality();
-                        //  if (streamInfo != null)
-                        // {
-                        //    var sanitizedTitle = SanitizeFileName(video.Title);
-                        //     var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
-                        //     await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Downloading: {video.Title}\n");
-                        //     await youtube.Videos.Streams.DownloadAsync(streamInfo, finalFilePath);
-                        //  }
-                        // else 
-                        // {
-                        //     await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "No suitable stream found\n");
-                        // }
-                        // break;
-
                         var audioStreamInfo = streamManifest
-                        .GetAudioStreams()
-                        .Where(s => s.Container == Container.Mp4)
-                        .GetWithHighestBitrate();
+                            .GetAudioStreams()
+                            .Where(s => s.Container == Container.Mp4)
+                            .GetWithHighestBitrate();
+
+                        var videoStreamInfo = streamManifest
+                            .GetVideoStreams()
+                            .Where(s => s.Container == Container.Mp4 && s.VideoQuality.Label == selectedQuality)
+                            .FirstOrDefault();
+
+                        if (videoStreamInfo != null && audioStreamInfo != null)
+                        {
+                            var sanitizedTitle = SanitizeFileName(video.Title);
+                            var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
+                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Selected Quality: {selectedQuality}\n");
+                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Downloading: {video.Title}\n");
+                            var streamInfos = new IStreamInfo[] { audioStreamInfo, videoStreamInfo };
+                            var conversionRequest = new ConversionRequestBuilder(finalFilePath)
+                                .SetFFmpegPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"))
+                                .Build();
+                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Muxing: {video.Title}\n");
+                            await youtube.Videos.DownloadAsync(streamInfos, conversionRequest);
+                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Download complete: {finalFilePath}\n");
+                        }
+                        else
+                        {
+                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "No suitable stream found\n");
+                        }
+
+                        break;
 
 
-
-
-                    }
+                }
                 case "MP3":
                 {
                     var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
@@ -197,15 +236,25 @@ public partial class MainWindow : Window
                         {
                             case "MP4":
                             {
-                                var streamInfo = streamManifest.GetVideoOnlyStreams().TryGetWithHighestBitrate();
-                                if (streamInfo != null)
+                                var audioStreamInfo = streamManifest
+                                    .GetAudioStreams()
+                                    .Where(s => s.Container == Container.Mp4)
+                                    .GetWithHighestBitrate();
+                                var videoStreamInfo = streamManifest
+                                    .GetVideoStreams()
+                                    .Where(s => s.Container == Container.Mp4)
+                                    .GetWithHighestVideoQuality();
+
+                                    if (audioStreamInfo != null && videoStreamInfo != null)
                                 {
                                     var sanitizedTitle = SanitizeFileName(video.Title);
                                     var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
                                     await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Downloading: {video.Title}\n");
-                                
-                                    //DownloadAsync
-                                    await youtube.Videos.Streams.DownloadAsync(streamInfo, finalFilePath);
+                                    var streamInfos = new IStreamInfo[] { audioStreamInfo, videoStreamInfo };
+                                    var conversionRequest = new ConversionRequestBuilder(finalFilePath)
+                                        .SetFFmpegPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"))
+                                        .Build();
+                                    await youtube.Videos.DownloadAsync(streamInfos, conversionRequest);
                                     await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Download complete: {finalFilePath}\n");
 
                                 }
@@ -227,11 +276,11 @@ public partial class MainWindow : Window
                                     var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp3");
                                     await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Download: {video.Title}\n");
 
-                                    // Download Async
+                                    // download Async
                                     await youtube.Videos.Streams.DownloadAsync(streamInfo, tempFilePath);
                                     await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Converting: {video.Title}\n");
 
-                                    // Convert To MP3 Async
+                                    // converting to MP3
                                     await Task.Run(() => ConvertToMp3(tempFilePath, finalFilePath));
                                     await Dispatcher.UIThread.InvokeAsync(() => {
                                         Logpane.Text += $"Download complete: {finalFilePath}\n";
@@ -265,11 +314,26 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void UrlTxt_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(UrlTxt.Text) && )
+        try
+            {
+                var availableQualities = await GetAvailableVideoQualitiesAsync(UrlTxt.Text);
+                Qualitybox.ItemsSource = availableQualities;
+                Qualitybox.SelectedIndex = 0
+            }
+        catch (Exception ex)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error loading video qualities: {ex.Message}\n");
+            }
+    }
+
     private void ConvertToMp3(string inputFilePath, string outputFilePath)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg.exe");
+            var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe");
             int coreCount = Environment.ProcessorCount;
 
             var processStartInfo = new ProcessStartInfo
@@ -302,7 +366,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "ffmpeg", "ffmpeg");
+            var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg");
             int coreCount = Environment.ProcessorCount;
 
             var processStartInfo = new ProcessStartInfo
