@@ -5,15 +5,9 @@ This is just an UI written in C# with AvaloniaUI, YoutubeExplode libraries and f
 To build do:
 - ```dotnet restore```
 - ```dotnet build -c Release```
-- go to Release folder and create a folder structure like this:
-  ```
-  Resources/
-  |
-    ffmpeg/
-      |
-        ffmpeg or ffmpeg.exe (depending on target ur using)
-  ```
-~~<h4>!Tip! to build on Windows, you have to modify the line where the process is executed, from 'ffmpeg' to 'ffmpeg.exe' like this:</h4>~~
+- go to Release folder and put your FFMpeg executable there
+- ``` ffmpeg.exe ```
+
 
 Download ffmpeg from [here](https://www.ffmpeg.org/download.html).
 
