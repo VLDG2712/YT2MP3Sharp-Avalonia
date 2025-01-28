@@ -63,8 +63,7 @@ public partial class MainWindow : Window
         
     }
 
-
-    private async void downloadbtn(object sender, RoutedEventArgs args)
+    private async void Downloadbtn(object sender, RoutedEventArgs args)
     {
 
         string path = File.ReadAllText($"{System.AppDomain.CurrentDomain.BaseDirectory}settings.dat");
