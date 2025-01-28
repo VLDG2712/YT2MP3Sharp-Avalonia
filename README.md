@@ -6,7 +6,7 @@ To build do:
 - ```dotnet restore```
 - ```dotnet build -c Release```
 - go to Release folder and put your FFMpeg executable there
-- ``` ffmpeg.exe ```
+
 
 
 Download ffmpeg from [here](https://www.ffmpeg.org/download.html).
