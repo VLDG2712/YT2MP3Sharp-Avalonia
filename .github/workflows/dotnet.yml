@@ -21,7 +21,9 @@ jobs:
             - name: Publish
               run: dotnet publish -c Release -o ./bin
             - name: Archive
-              run: 7z a -tzip publish.zip ./bin
+              uses: edgarrc/action-7z@v1
+              with:
+               args: 7z a -tzip -mx=9 build.zip ./bin/
             - name: Upload
               uses: actions/upload-release-action@v2
               with:
