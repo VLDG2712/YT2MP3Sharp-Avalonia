@@ -12,8 +12,8 @@ on:
 
 env:
 
-    PROJECT_PATH: YT2MP3Sharp
-    APP_NAME: YT2MP3Sharp-Avalonia
+    PROJECT_PATH: YT2MP3Sharp-Avalonia/YT2MP3Sharp.csproj
+    APP_NAME: YT2MP3Sharp
 
     CHECK_TAG_EXISTENCE_BEFORE_CREATING_TAG: false
     PUBLISH_OUTPUT_FOLDER: bin
