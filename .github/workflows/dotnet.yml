@@ -26,3 +26,5 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+    - name: Publish
+      run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/bin --framework net8.0 --runtime win-x64 ./YT2MP3Sharp.sln
