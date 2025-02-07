@@ -8,3 +8,6 @@ repo = "YT2MP3Sharp-Avalonia"
 publish = true
 rid = ["win-x64"]
 kinds = ["zip"]
+[nuget]
+source = ""
+publish = false
