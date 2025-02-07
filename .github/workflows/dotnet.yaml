@@ -20,3 +20,15 @@ jobs:
               run: dotnet build --no-restore
             - name: Publish
               run: dotnet publish -c Release -o ./bin
+            - name: Archive
+              run: 7z a -tzip publish.zip ./bin
+            - name: Upload
+              uses: actions/upload-release-action@v2
+              with:
+                repo_token: ${{ secrets.GITHUB_TOKEN }}
+                file: publish.zip
+                name: publish
+                asset_name: YT2MP3Sharp.zip
+                tag: ${{ github.ref }}
+                overwrite: true
+                body: "This is a test"
