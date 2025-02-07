@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Read some variables from the 'build' job
-      APP_VERSION: ${{ app.version }}
+      APP_VERSION: ${{ steps.get-version.outputs.version }}
       IS_PRE_RELEASE: ${{ needs.build.outputs.IS_PRE_RELEASE }}
     steps:
       - uses: actions/checkout@v4
