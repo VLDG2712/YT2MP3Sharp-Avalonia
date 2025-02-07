@@ -26,7 +26,7 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
-    - name: Build, Tests, Cover, Pack and Publish (on push tag)
+    - name: Build, Tests, Cover, Pack and Publish. (on push tag)
       shell: bash
       run: |
         dotnet tool install --global dotnet-releaser
