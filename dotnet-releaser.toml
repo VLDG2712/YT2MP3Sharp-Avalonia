@@ -1,13 +1,38 @@
 [msbuild]
 project = "YT2MP3Sharp.sln"
+
 [github]
 user = "VLDG2712"
 repo = "YT2MP3Sharp-Avalonia"
+
 # Create zip files only for Windows platforms
 [[pack]]
 publish = true
 rid = ["win-x64"]
 kinds = ["zip"]
+
 [nuget]
 source = ""
+publish = false
+
+[[pack]]
+rid = [ "win-arm", "win-arm64"]
+kinds = ["zip"]
+publish = false
+
+[[pack]]
+rid = ["linux-x64", "linux-arm", "linux-arm64"]
+kinds = ["deb", "tar"]
+publish = false
+
+# Default targets for Linux/Redhat compatible distro with rpm and tar packages
+[[pack]]
+rid = ["rhel-x64"]
+kinds = ["rpm", "tar"]
+publish = false
+
+# Default targets for macOS, only tar files for this platform
+[[pack]]
+rid = ["osx-x64", "osx-arm64"]
+kinds = ["tar"]
 publish = false
