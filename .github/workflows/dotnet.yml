@@ -12,7 +12,7 @@ on:
 
 env:
 
-    PROJECT_PATH: ./
+    PROJECT_PATH: .
     APP_NAME: YT2MP3Sharp-Avalonia
 
     CHECK_TAG_EXISTENCE_BEFORE_CREATING_TAG: false
