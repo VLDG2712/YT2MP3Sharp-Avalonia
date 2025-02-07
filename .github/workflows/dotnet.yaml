@@ -26,7 +26,7 @@ jobs:
               with:
                 repo_token: ${{ secrets.GITHUB_TOKEN }}
                 file: publish.zip
-                name: publish
+                name: YT2MP3Sharp-Avalonia
                 asset_name: YT2MP3Sharp.zip
                 tag: ${{ github.ref }}
                 overwrite: true
