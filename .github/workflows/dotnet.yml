@@ -1,4 +1,4 @@
-name: .NET
+name: myworkflow
 on:
   push:
     tags:
