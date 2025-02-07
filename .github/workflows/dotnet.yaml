@@ -20,17 +20,3 @@ jobs:
               run: dotnet build --no-restore
             - name: Publish
               run: dotnet publish -c Release -o ./bin
-    release:
-            runs-on: ubuntu-latest
-            needs: build
-
-            - name: Upload
-              uses: actions/upload-release-action@v2
-              with:
-                repo_token: ${{ secrets.GITHUB_TOKEN }}
-                file: publish.zip
-                name: publish
-                asset_name: YT2MP3Sharp.zip
-                tag: ${{ github.ref }}
-                overwrite: true
-                body: "This is a test"
