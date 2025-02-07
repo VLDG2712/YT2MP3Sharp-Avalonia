@@ -1,0 +1,5 @@
+[msbuild]
+project = "YT2MP3Sharp.sln"
+[github]
+user = "VLDG2712"
+repo = "YT2MP3Sharp-Avalonia"
