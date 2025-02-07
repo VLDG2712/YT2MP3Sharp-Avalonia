@@ -1,8 +1,7 @@
 name: myworkflow
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [ "main" ]
 jobs:
     build:
         name: Publish Binaries
