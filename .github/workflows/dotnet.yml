@@ -66,26 +66,13 @@ jobs:
       with:
         name: artifacts-${{ matrix.platform }}
         path: ${{ env.APP_NAME }}-v${{ steps.get-version.outputs.version }}-${{ matrix.platform }}.zip
-    - run: |
-        # Define the list of strings
-        $list = @("beta", "alpha", "preview", "experiment")
 
-        # Define the suffix variable
-        $suffix = "${{ steps.get-version.outputs.version-suffix }}"
-
-        foreach ($item in $list) {
-          # Convert both strings to lower case for case-insensitive comparison
-          if ($suffix.ToLower().StartsWith($item.ToLower())) {
-            echo "IS_PRE_RELEASE=true" >> $env:GITHUB_ENV
-            break
-          }
-        }
   release:
     needs: build
     runs-on: ubuntu-latest
     env:
       # Read some variables from the 'build' job
-      APP_VERSION: ${{ needs.build.outputs.app-version }}
+      APP_VERSION: ${{ app.version }}
       IS_PRE_RELEASE: ${{ needs.build.outputs.IS_PRE_RELEASE }}
     steps:
       - uses: actions/checkout@v4
