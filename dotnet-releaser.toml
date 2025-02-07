@@ -1,9 +1,7 @@
 [msbuild]
 project = "YT2MP3Sharp.sln"
 configuration = "Release"
-version = "0.1.0"
-output = "bin/Release/net8.0/YT2MP3Sharp.zip"
-runtime = "win-x64"
+
 
 [github]
 user = "VLDG2712"
