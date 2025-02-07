@@ -3,3 +3,8 @@ project = "YT2MP3Sharp.sln"
 [github]
 user = "VLDG2712"
 repo = "YT2MP3Sharp-Avalonia"
+# Create zip files only for Windows platforms
+[[pack]]
+publish = true
+rid = ["win-x64"]
+kinds = ["zip"]
