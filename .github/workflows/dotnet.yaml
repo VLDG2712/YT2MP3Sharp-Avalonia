@@ -20,7 +20,7 @@ jobs:
             - name: Publish
               run: dotnet publish -c Release -o ./bin
             - name: Archive
-              run: 7z a -tzip publish.zip ./bin
+              run: 7z a -tzip publish.zip ./bin/Release/net8.0/*
             - name: Upload
               uses: svenstaro/upload-release-action@v2
               with:
