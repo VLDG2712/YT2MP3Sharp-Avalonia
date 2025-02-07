@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Read some variables from the 'build' job
-      APP_VERSION: ${{ steps.get-version.outputs.version }}
+      APP_VERSION: ${{ needs.build.outputs.app-version }}
       IS_PRE_RELEASE: ${{ needs.build.outputs.IS_PRE_RELEASE }}
     steps:
       - uses: actions/checkout@v4
@@ -104,7 +104,11 @@ jobs:
               git tag "$TAG_NAME"
               git push origin "$TAG_NAME"
           fi  
-          
+
+      # Installing a package for generating a changelog file
+      - run: npm install -g auto-changelog  
+      - run: auto-changelog --tag-pattern .+ --commit-limit false --starting-version v${{ env.APP_VERSION }} --ending-version v${{ env.APP_VERSION }} --hide-credit  
+    
       # Creating a Release in GitHub
       - uses: ncipollo/release-action@v1
         with:
