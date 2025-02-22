@@ -1,11 +1,3 @@
-<!-- /*
- * 
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. 
- * 
- */-->
-
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -16,27 +8,42 @@
         Title="YT2MP3Sharp"
         CanResize="False">
 
-	<StackPanel Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" Width="500">
-		<TextBox Watermark="YouTube Song or Playlist URL"
-                 x:Name="UrlTxt"
-                 Margin="0 10 0 10"
-                 Width="480"
-                 Background="#1f7a8c"
-                 HorizontalContentAlignment="Center"
-				 LostFocus="UrlTxt_LostFocus"/>
+	<Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" Width="500">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
+			<RowDefinition Height="*"/>
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*"/>
+			<ColumnDefinition Width="Auto"/>
+		</Grid.ColumnDefinitions>
 
-		<TextBox Margin="0 10"
-                 Height="200"
-                 TextWrapping="Wrap"
-                 IsReadOnly="True"
-                 AcceptsReturn="True"
-                 x:Name="Logpane"
-                 HorizontalAlignment="Stretch"
-                 VerticalAlignment="Top"
-                 Background="#1F7A8C"
-                 HorizontalContentAlignment="Center"/>
+		<!-- Group 1 -->
+		<StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="10 10">
+			<TextBox Watermark="YouTube Song or Playlist URL"
+                     x:Name="UrlTxt"
+                     Margin="0 10 0 10"
+                     Width="480"
+                     Background="#1f7a8c"
+                     HorizontalContentAlignment="Center"
+                     LostFocus="UrlTxt_LostFocus"/>
 
-		<ProgressBar x:Name="Progressbar"
+			<TextBox Margin="0 10"
+                     Height="200"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     x:Name="Logpane"
+                     HorizontalAlignment="Stretch"
+                     VerticalAlignment="Top"
+                     Background="#1F7A8C"
+                     HorizontalContentAlignment="Center"/>
+		</StackPanel>
+
+		<!-- Group 2 -->
+		<ProgressBar Grid.Row="1" Grid.ColumnSpan="2"
                      Margin="0 10"
                      Height="10"
                      Minimum="0"
@@ -47,9 +54,9 @@
                      ShowProgressText="False"
                      Background="#1f7a8c"/>
 
-		<ComboBox Margin="0 10"
+		<ComboBox Grid.Row="2" Grid.Column="0" Margin="0 10"
                   x:Name="Formatbox"
-				  PlaceholderText="Format"
+                  PlaceholderText="Format"
                   SelectedIndex="0"
                   MaxDropDownHeight="100"
                   Width="100"
@@ -59,43 +66,47 @@
 			<ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c">MP3</ComboBoxItem>
 			<ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c">MP4</ComboBoxItem>
 		</ComboBox>
-		
-		<ComboBox Margin="0 10"
-				  PlaceholderText="Quality"
-				  x:Name="Qualitybox"
-				  SelectedIndex="0"
-				  Width="100"
-				  HorizontalAlignment="Left"
-				  Background="#1f7a8c"
-				  HorizontalContentAlignment="Center">
+
+		<ComboBox Grid.Row="2" Grid.Column="1" Margin="0 10"
+                  PlaceholderText="Quality"
+                  x:Name="Qualitybox"
+                  SelectedIndex="0"
+                  Width="100"
+                  HorizontalAlignment="Left"
+                  Background="#1f7a8c"
+                  HorizontalContentAlignment="Center">
 		</ComboBox>
 
-		<Button Click="SelectFolderButton_Click"
+		<!-- Group 3 -->
+		<Button Grid.Row="3" Grid.Column="1" Click="SelectFolderButton_Click"
                 Width="100"
+                VerticalAlignment="Top"
                 HorizontalAlignment="Right"
-                Margin="0 10"
+                Margin="0 0"
                 Background="#1f7a8c"
                 HorizontalContentAlignment="Center">
 			Save To
 		</Button>
 
-		<Button Click="Downloadbtn"
+		<Button Grid.Row="3" Grid.Column="1" Click="Downloadbtn"
                 Width="100"
                 HorizontalAlignment="Right"
-                Margin="0 0 0 0"
+                Margin="0 20 0 0"
                 Background="#1f7a8c"
                 HorizontalContentAlignment="Center">
 			Download
 		</Button>
-		
-		<Border BorderBrush="#1f7a8c" BorderThickness="0 0 0 1" Margin="0 55 0 0 "/>
 
-		<Label x:Name="Spath"
-               Margin="0 0 0 0"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Bottom">
-			~
-		</Label>
+		<!-- Group 4 -->
+		<StackPanel Grid.Row="4" Grid.ColumnSpan="2" Margin="0 10">
+			<Border BorderBrush="#1f7a8c" BorderThickness="0 0 0 1" Margin="0 55 0 0 "/>
 
-	</StackPanel>
+			<Label x:Name="Spath"
+                   Margin="0 0 0 0"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Bottom">
+				~
+			</Label>
+		</StackPanel>
+	</Grid>
 </Window>
