@@ -29,6 +29,5 @@ jobs:
                 asset_name: YT2MP3Sharp.zip
                 tag: "1.0.2"
                 overwrite: true
-                body: "Update 1.0.2 |
-                        Test Update
-                        Updated Youtube Explode to version 6.5.3"
+                body: "Update 1.0.2"
+                        
