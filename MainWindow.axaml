@@ -6,96 +6,124 @@
  * 
  */-->
 
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        Width="600" Height="600"
-        x:Class="YT2MP3Sharp.MainWindow"
-        Background="#022b3a"
-        Title="YT2MP3Sharp"
-        CanResize="False">
-
-	<StackPanel Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" Width="500">
-		<TextBox Watermark="YouTube Song or Playlist URL"
-                 x:Name="UrlTxt"
-                 Margin="0 10 0 10"
-                 Width="480"
-                 Background="#1f7a8c"
-                 HorizontalContentAlignment="Center"
-				 LostFocus="UrlTxt_LostFocus"/>
-
-		<TextBox Margin="0 10"
-                 Height="200"
-                 TextWrapping="Wrap"
-                 IsReadOnly="True"
-                 AcceptsReturn="True"
-                 x:Name="Logpane"
-                 HorizontalAlignment="Stretch"
-                 VerticalAlignment="Top"
-                 Background="#1F7A8C"
-                 HorizontalContentAlignment="Center"/>
-
-		<ProgressBar x:Name="Progressbar"
-                     Margin="0 10"
-                     Height="10"
-                     Minimum="0"
-                     Maximum="100"
-                     Value="0"
-                     Foreground="#e1e5f2"
-                     HorizontalAlignment="Stretch"
-                     ShowProgressText="False"
-                     Background="#1f7a8c"/>
-
-		<ComboBox Margin="0 10"
-                  x:Name="Formatbox"
-				  PlaceholderText="Format"
-                  SelectedIndex="0"
-                  MaxDropDownHeight="100"
-                  Width="100"
-                  HorizontalAlignment="Left"
-                  Background="#1f7a8c"
-                  HorizontalContentAlignment="Center">
-			<ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c">MP3</ComboBoxItem>
-			<ComboBoxItem HorizontalContentAlignment="Center" Background="#1f7a8c">MP4</ComboBoxItem>
-		</ComboBox>
-		
-		<ComboBox Margin="0 10"
-				  PlaceholderText="Quality"
-				  x:Name="Qualitybox"
-				  SelectedIndex="0"
-				  Width="100"
-				  HorizontalAlignment="Left"
-				  Background="#1f7a8c"
-				  HorizontalContentAlignment="Center">
-		</ComboBox>
-
-		<Button Click="SelectFolderButton_Click"
+<Window
+    x:Class="YT2MP3Sharp.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="YT2MP3Sharp"
+    Width="800"
+    Height="540"
+    d:DesignHeight="540"
+    d:DesignWidth="800"
+    CanResize="False"
+    mc:Ignorable="d">
+	<Grid Background="#1D1616" RowDefinitions="Auto, *, Auto">
+		<!--  Top Side, Search + Download Button  -->
+		<Grid
+            Grid.Row="0"
+            Height="30"
+            Margin="10,10"
+            ColumnDefinitions="*, Auto, Auto">
+			<TextBox x:Name="UrlTxt" Grid.Column="0" HorizontalContentAlignment="Center" Background="#8E1616" Foreground="#EEEEEE" Opacity="0.9" OpacityMask="#1f7a8c" FontWeight="Bold" FontSize="15" Watermark="URL to YouTube Video or Playlist"/>
+			<Rectangle
+                Grid.Column="1"
+                Width="50"/>
+			<Button
+				Click="Downloadbtn"
+				HorizontalContentAlignment="Center"
+                Grid.Column="2"
+				Height="33"
                 Width="100"
-                HorizontalAlignment="Right"
-                Margin="0 10"
-                Background="#1f7a8c"
-                HorizontalContentAlignment="Center">
-			Save To
-		</Button>
+                Content="Download"
+                Background="#8E1616"
+                Foreground="#EEEEEE" />
+		</Grid>
 
-		<Button Click="Downloadbtn"
-                Width="100"
-                HorizontalAlignment="Right"
-                Margin="0 0 0 0"
-                Background="#1f7a8c"
-                HorizontalContentAlignment="Center">
-			Download
-		</Button>
-		
-		<Border BorderBrush="#1f7a8c" BorderThickness="0 0 0 1" Margin="0 55 0 0 "/>
+		<!--  Middle Side, Log Pane + Progress Bar  -->
+		<Grid
+            Grid.Row="1"
+            Width=""
+            Margin="10,10">
 
-		<Label x:Name="Spath"
-               Margin="0 0 0 0"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Bottom">
-			~
-		</Label>
+			<StackPanel Orientation="Vertical">
+				<TextBox
+					x:Name="Logpane"
+					IsEnabled="False"
+					IsReadOnly="True"
+					Height="390"
+					Width="780"
+					Text="Log Panel"
+					HorizontalContentAlignment="Center"
+					FontSize="13"
+                    Background="Transparent"
+					Foreground="#EEEEEE"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					Opacity="0.75"/>
+				<ProgressBar x:Name="Progressbar" Background="#8E1616" Foreground="#D84040" ShowProgressText="False" Minimum="0" Maximum="100" Value="0" Height="4" Margin="0 10"/>
+			</StackPanel>
+		</Grid>
 
-	</StackPanel>
+		<!--  Bottom Side, Combo Boxes for Quality and Format + Save To -->
+		<Grid
+			ColumnDefinitions="*, *, *"
+			RowDefinitions="*, *"
+            Grid.Row="2"
+            Height="60"
+            Margin="10,10">
+			<Border
+				Grid.Row="0"
+				Grid.ColumnSpan="3"
+                Height="2"
+                Background="#8E1616"
+                CornerRadius="45" />
+			<StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
+				<ComboBox
+					x:Name="Qualitybox"
+                    Height="33"
+                    Width="100"
+                    Background="#8E1616"
+					Margin="10 0"
+                    Foreground="#EEEEEE"
+					PlaceholderForeground="#EEEEEE"
+					HorizontalContentAlignment="Center"
+					PlaceholderText="Quality">
+				</ComboBox>
+				<ComboBox
+					x:Name="Formatbox"
+                    Height="33"
+                    Width="100"
+                    Background="#8E1616"
+                    Foreground="#EEEEEE"
+					PlaceholderForeground="#EEEEEE"
+					HorizontalContentAlignment="Center"
+					PlaceholderText="Format">
+					<ComboBoxItem HorizontalContentAlignment="Center" Background="#8E1616">MP3</ComboBoxItem>
+					<ComboBoxItem HorizontalContentAlignment="Center" Background="#8E1616">MP4</ComboBoxItem>
+				</ComboBox>
+			</StackPanel>
+			<Label x:Name="Spath" Foreground="#EEEEEE" FontWeight="Bold" HorizontalContentAlignment="Center" Grid.Column="1" Grid.Row="2" Margin="0 2">Saving to:</Label>
+			<StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal">
+				<Button
+					Click="SelectFolderButton_Click"
+					HorizontalContentAlignment="Center"
+                    Height="33"
+                    Width="100"
+					Margin="50 0 0 0"
+                    Content="Save To"
+                    Background="#8E1616"
+                    Foreground="#EEEEEE" />
+				<Button
+                    HorizontalContentAlignment="Center"
+                    Height="33"
+                    Width="100"
+					Margin="10 0 0 0"
+                    Content="Settings"
+                    Background="#8E1616"
+                    Foreground="#EEEEEE" />
+			</StackPanel>
+		</Grid>
+	</Grid>
 </Window>

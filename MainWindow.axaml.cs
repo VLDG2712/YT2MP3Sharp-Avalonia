@@ -30,7 +30,15 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Progressbar = this.FindControl<ProgressBar>("Progressbar");
+        UrlTxt = this.FindControl<TextBox>("UrlTxt");
+        Qualitybox = this.FindControl<ComboBox>("Qualitybox");
+        Formatbox = this.FindControl<ComboBox>("Formatbox");
+        Logpane = this.FindControl<TextBox>("Logpane");
+        Spath = this.FindControl<Label>("Spath");
         Logpane.Text = "Ready...\n";
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
     }
     public async Task SelectFolder(Window parentWindow)
     {
