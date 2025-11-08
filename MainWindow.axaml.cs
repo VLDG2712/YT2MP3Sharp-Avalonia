@@ -37,8 +37,8 @@ public partial class MainWindow : Window
         Logpane = this.FindControl<TextBox>("Logpane");
         Spath = this.FindControl<Label>("Spath");
         Logpane.Text = "Ready...\n";
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
+        Formatbox.SelectionChanged += Formatbox_SelectionChanged;
+
     }
     public async Task SelectFolder(Window parentWindow)
     {
@@ -51,6 +51,7 @@ public partial class MainWindow : Window
 
         // Show the folder picker dialog
         var result = await parentWindow.StorageProvider.OpenFolderPickerAsync(options);
+
 
         if (result != null && result.Count > 0)
         {
@@ -89,11 +90,11 @@ public partial class MainWindow : Window
         {
             if (url.Contains("playlist"))
             {
-                await Task.Run(() => DownloadPlaylistAsync(url, path, format));
+                await DownloadPlaylistAsync(url, path, format);
             }
             else 
             {
-                await Task.Run(() => DownloadVideoAsync(url, path, format, selectedQuality));
+                await DownloadVideoAsync(url, path, format, selectedQuality);
             }
         }
 
@@ -102,6 +103,29 @@ public partial class MainWindow : Window
             await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error: {ex.Message}\n");
         }
     }
+    private async void Formatbox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var selectedFormat = (Formatbox.SelectedItem as ComboBoxItem)?.Content?.ToString();
+        if (selectedFormat == "MP4" && !string.IsNullOrWhiteSpace(UrlTxt.Text))
+        {
+            try
+            {
+                var availableQualities = await GetAvailableVideoQualitiesAsync(UrlTxt.Text);
+                Qualitybox.ItemsSource = availableQualities;
+                Qualitybox.SelectedIndex = availableQualities.Count > 0 ? 0 : -1;
+            }
+            catch (Exception ex)
+            {
+                await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error loading video qualities: {ex.Message}\n");
+            }
+        }
+        else
+        {
+            Qualitybox.ItemsSource = null;
+            Qualitybox.SelectedIndex = -1;
+        }
+    }
+
     private async Task<List<string>> GetAvailableVideoQualitiesAsync(string url)
     {
         var youtube = new YoutubeClient();

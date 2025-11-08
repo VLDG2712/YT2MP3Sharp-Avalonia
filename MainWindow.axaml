@@ -122,7 +122,8 @@
 					Margin="10 0 0 0"
                     Content="Settings"
                     Background="#8E1616"
-                    Foreground="#EEEEEE" />
+                    Foreground="#EEEEEE" 
+					IsEnabled="False"/>
 			</StackPanel>
 		</Grid>
 	</Grid>
