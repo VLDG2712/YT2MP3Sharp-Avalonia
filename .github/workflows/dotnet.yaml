@@ -19,6 +19,11 @@ jobs:
               run: dotnet build --no-restore
             - name: Publish
               run: dotnet publish -c Release -o ./bin
+            - name: Download ffmpeg
+              run: |
+                curl -L -o ffmpeg.zip https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip
+                7z e ffmpeg.zip -o"." "ffmpeg-*-essentials_build/bin/ffmpeg.exe" -r
+                move ffmpeg.exe ./bin/
             - name: Archive
               run: 7z a -tzip publish.zip ./bin/Release/net8.0/*
             - name: Upload
@@ -29,5 +34,5 @@ jobs:
                 asset_name: YT2MP3Sharp.zip
                 tag: "1.0.3"
                 overwrite: true
-                body: "Update 1.0.3"
+                body: "Update 1.0.3 | Updated to include new version of Youtube Explode and FFMpeg"
                         
