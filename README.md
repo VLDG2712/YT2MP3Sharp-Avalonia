@@ -7,7 +7,7 @@ This is just an UI  written in C#([.NET](https://dotnet.microsoft.com/en-us/)) w
 To build do:
 - ```dotnet restore```
 - ```dotnet build -c Release```
-- go to Release folder and put your FFMpeg executable there
+- go to Release folder and put your FFMpeg executable there.
 
 
 
