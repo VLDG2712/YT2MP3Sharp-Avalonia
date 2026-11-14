@@ -1,8 +1,16 @@
-bin
-.log
-.conf
-.exe
-obj
-.vscode/
-Resources/
+# Build output
+bin/
+obj/
+
+# Logs, local config and stray binaries (ffmpeg.exe and friends)
+*.log
+*.conf
+*.exe
+
+# IDE and per-user files
 .vs/
+.vscode/
+.idea/
+*.user
+
+Resources/
