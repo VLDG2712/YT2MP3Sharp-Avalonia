@@ -2,49 +2,93 @@ name: myworkflow
 on:
   push:
     branches: [ "main" ]
-permissions:
-    contents: write
-jobs:
-    build:
-        name: Publish Binaries
-        runs-on: windows-latest
 
-        steps:
-            - uses: actions/checkout@v4
-            # The release tag comes from <Version> in the csproj, so bumping the
-            # version there is the only step needed to publish a new release.
-            - name: Read version from csproj
-              id: version
-              shell: pwsh
-              run: |
-                $version = "$(([xml](Get-Content YT2MP3Sharp.csproj)).Project.PropertyGroup.Version)".Trim()
-                if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Unexpected version '$version' in YT2MP3Sharp.csproj" }
-                "version=$version" >> $env:GITHUB_OUTPUT
-            - name: Setup .NET
-              uses: actions/setup-dotnet@v4
-              with:
-               dotnet-version: 8.0.x
-            - name: Restore dependencies
-              run: dotnet restore
-            - name: Build
-              run: dotnet build --no-restore
-            - name: Publish
-              run: dotnet publish -c Release -o ./bin
-            - name: Download ffmpeg
-              run: |
-                curl -L -o ffmpeg.zip https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip
-                7z e ffmpeg.zip -o"." "ffmpeg-*-essentials_build/bin/ffmpeg.exe" -r
-                move ffmpeg.exe ./bin/Release/net8.0/
-            - name: Archive
-              run: 7z a -tzip publish.zip ./bin/Release/net8.0/*
-            - name: Upload
-              uses: svenstaro/upload-release-action@v2
-              with:
-                repo_token: ${{ secrets.GITHUB_TOKEN }}
-                file: publish.zip
-                asset_name: YT2MP3Sharp.zip
-                tag: ${{ steps.version.outputs.version }}
-                release_name: YT2MP3Sharp ${{ steps.version.outputs.version }}
-                overwrite: true
-                body: "YT2MP3Sharp ${{ steps.version.outputs.version }} for Windows, ffmpeg included."
-                        
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+          - rid: linux-x64
+            os: ubuntu-latest
+          # Cross-compiled on the x64 runner.
+          - rid: linux-arm64
+            os: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # Self-contained: the .NET runtime ships inside the package, so users
+      # do not have to install it.
+      - name: Publish
+        run: dotnet publish YT2MP3Sharp.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o publish/YT2MP3Sharp
+
+      # Windows users rarely have ffmpeg, so it is bundled. On Linux the app
+      # uses the ffmpeg installed on the system.
+      - name: Bundle ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          curl -L -o ffmpeg.zip https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip
+          7z e ffmpeg.zip -o"." "ffmpeg-*-essentials_build/bin/ffmpeg.exe" -r
+          move ffmpeg.exe publish/YT2MP3Sharp/
+
+      - name: Archive (Windows)
+        if: runner.os == 'Windows'
+        run: 7z a -tzip YT2MP3Sharp-${{ matrix.rid }}.zip ./publish/YT2MP3Sharp/*
+
+      # tar keeps the executable bit, which a zip made here would lose.
+      - name: Archive (Linux)
+        if: runner.os == 'Linux'
+        run: tar -czf YT2MP3Sharp-${{ matrix.rid }}.tar.gz -C publish YT2MP3Sharp
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.rid }}
+          path: YT2MP3Sharp-${{ matrix.rid }}.*
+          if-no-files-found: error
+
+  # Runs only when every build succeeded, so a release never ends up half-updated.
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The release tag comes from <Version> in the csproj, so bumping the
+      # version there is the only step needed to publish a new release.
+      - name: Read version from csproj
+        id: version
+        shell: pwsh
+        run: |
+          $version = "$(([xml](Get-Content YT2MP3Sharp.csproj)).Project.PropertyGroup.Version)".Trim()
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Unexpected version '$version' in YT2MP3Sharp.csproj" }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Upload
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/*
+          file_glob: true
+          tag: ${{ steps.version.outputs.version }}
+          release_name: YT2MP3Sharp ${{ steps.version.outputs.version }}
+          overwrite: true
+          body: "YT2MP3Sharp ${{ steps.version.outputs.version }}. No .NET install needed. The Windows zip includes ffmpeg; on Linux install ffmpeg with your package manager."
