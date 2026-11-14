@@ -15,116 +15,109 @@
     Title="YT2MP3Sharp"
     Width="800"
     Height="540"
+    MinWidth="640"
+    MinHeight="380"
     d:DesignHeight="540"
     d:DesignWidth="800"
-    CanResize="False"
+    Background="#1D1616"
+    WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-	<Grid Background="#1D1616" RowDefinitions="Auto, *, Auto">
-		<!--  Top Side, Search + Download Button  -->
-		<Grid
-            Grid.Row="0"
-            Height="30"
-            Margin="10,10"
-            ColumnDefinitions="*, Auto, Auto">
-			<TextBox x:Name="UrlTxt" Grid.Column="0" HorizontalContentAlignment="Center" Background="#8E1616" Foreground="#EEEEEE" Opacity="0.9" OpacityMask="#1f7a8c" FontWeight="Bold" FontSize="15" Watermark="URL to YouTube Video or Playlist"/>
-			<Rectangle
+    <Grid Margin="16" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="12">
+
+        <!--  Link + main actions  -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <TextBox
+                x:Name="UrlTxt"
+                Grid.Column="0"
+                VerticalContentAlignment="Center"
+                FontSize="14"
+                PlaceholderText="Paste a YouTube video or playlist link" />
+            <Button
+                x:Name="DownloadBtn"
                 Grid.Column="1"
-                Width="50"/>
-			<Button
-				Click="Downloadbtn"
-				HorizontalContentAlignment="Center"
+                MinWidth="110"
+                VerticalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+                Classes="accent"
+                Click="DownloadBtn_Click"
+                Content="Download" />
+            <Button
+                x:Name="CancelBtn"
                 Grid.Column="2"
-				Height="33"
-                Width="100"
-                Content="Download"
-                Background="#8E1616"
-                Foreground="#EEEEEE" />
-		</Grid>
+                MinWidth="90"
+                VerticalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                VerticalContentAlignment="Center"
+                Click="CancelBtn_Click"
+                Content="Cancel"
+                IsVisible="False" />
+        </Grid>
 
-		<!--  Middle Side, Log Pane + Progress Bar  -->
-		<Grid
-            Grid.Row="1"
-            Width=""
-            Margin="10,10">
+        <!--  Format, quality and save folder  -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+            <ComboBox
+                x:Name="Formatbox"
+                Grid.Column="0"
+                MinWidth="100"
+                ToolTip.Tip="Output format">
+                <ComboBoxItem>MP3</ComboBoxItem>
+                <ComboBoxItem>MP4</ComboBoxItem>
+            </ComboBox>
+            <ComboBox
+                x:Name="Qualitybox"
+                Grid.Column="1"
+                MinWidth="140"
+                IsEnabled="False"
+                PlaceholderText="Best quality"
+                ToolTip.Tip="Video quality (single MP4 downloads)" />
+            <TextBlock
+                x:Name="Spath"
+                Grid.Column="2"
+                Margin="8,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Foreground="#EEEEEE"
+                Opacity="0.8"
+                TextTrimming="CharacterEllipsis" />
+            <Button
+                x:Name="SelectFolderBtn"
+                Grid.Column="3"
+                MinWidth="90"
+                HorizontalContentAlignment="Center"
+                Click="SelectFolderButton_Click"
+                Content="Save to..." />
+        </Grid>
 
-			<StackPanel Orientation="Vertical">
-				<TextBox
-					x:Name="Logpane"
-					IsEnabled="False"
-					IsReadOnly="True"
-					Height="390"
-					Width="780"
-					Text="Log Panel"
-					HorizontalContentAlignment="Center"
-					FontSize="13"
-                    Background="Transparent"
-					Foreground="#EEEEEE"
-					HorizontalAlignment="Center"
-					VerticalAlignment="Center"
-					Opacity="0.75"/>
-				<ProgressBar x:Name="Progressbar" Background="#8E1616" Foreground="#D84040" ShowProgressText="False" Minimum="0" Maximum="100" Value="0" Height="4" Margin="0 10"/>
-			</StackPanel>
-		</Grid>
-
-		<!--  Bottom Side, Combo Boxes for Quality and Format + Save To -->
-		<Grid
-			ColumnDefinitions="*, *, *"
-			RowDefinitions="*, *"
+        <!--  Log: read-only, but it can be scrolled, selected and copied  -->
+        <TextBox
+            x:Name="Logpane"
             Grid.Row="2"
-            Height="60"
-            Margin="10,10">
-			<Border
-				Grid.Row="0"
-				Grid.ColumnSpan="3"
-                Height="2"
-                Background="#8E1616"
-                CornerRadius="45" />
-			<StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
-				<ComboBox
-					x:Name="Qualitybox"
-                    Height="33"
-                    Width="100"
-                    Background="#8E1616"
-					Margin="10 0"
-                    Foreground="#EEEEEE"
-					PlaceholderForeground="#EEEEEE"
-					HorizontalContentAlignment="Center"
-					PlaceholderText="Quality">
-				</ComboBox>
-				<ComboBox
-					x:Name="Formatbox"
-                    Height="33"
-                    Width="100"
-                    Background="#8E1616"
-                    Foreground="#EEEEEE"
-					PlaceholderForeground="#EEEEEE"
-					HorizontalContentAlignment="Center"
-					PlaceholderText="Format">
-					<ComboBoxItem HorizontalContentAlignment="Center" Background="#8E1616">MP3</ComboBoxItem>
-					<ComboBoxItem HorizontalContentAlignment="Center" Background="#8E1616">MP4</ComboBoxItem>
-				</ComboBox>
-			</StackPanel>
-			<Label x:Name="Spath" Foreground="#EEEEEE" FontWeight="Bold" HorizontalContentAlignment="Center" Grid.Column="1" Grid.Row="2" Margin="0 2">Saving to:</Label>
-			<StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal">
-				<Button
-					Click="SelectFolderButton_Click"
-					HorizontalContentAlignment="Center"
-                    Height="33"
-                    Width="100"
-					Margin="50 0 0 0"
-                    Content="Save To"
-                    Background="#8E1616"
-                    Foreground="#EEEEEE" />
-				<Button
-                    HorizontalContentAlignment="Center"
-                    Height="33"
-                    Width="100"
-					Margin="10 0 0 0"
-                    Content="Settings"
-                    Background="#8E1616"
-                    Foreground="#EEEEEE" 
-					IsEnabled="False"/>
-			</StackPanel>
-		</Grid>
-	</Grid>
+            VerticalContentAlignment="Top"
+            AcceptsReturn="True"
+            FontSize="13"
+            IsReadOnly="True"
+            TextWrapping="Wrap" />
+
+        <!--  Progress  -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <ProgressBar
+                x:Name="Progressbar"
+                Grid.Column="0"
+                Height="6"
+                VerticalAlignment="Center"
+                Foreground="#D84040"
+                Maximum="100"
+                Minimum="0"
+                Value="0" />
+            <TextBlock
+                x:Name="StatusTxt"
+                Grid.Column="1"
+                MinWidth="80"
+                VerticalAlignment="Center"
+                Foreground="#EEEEEE"
+                Opacity="0.8"
+                TextAlignment="Right" />
+        </Grid>
+    </Grid>
 </Window>

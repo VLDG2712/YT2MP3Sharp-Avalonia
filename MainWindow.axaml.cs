@@ -6,20 +6,14 @@
  * 
  */
 
-using Avalonia.Controls;
-using Avalonia.Interactivity;
-using System.Threading.Tasks;
-using YoutubeExplode;
-using YoutubeExplode.Videos.Streams;
-using YoutubeExplode.Converter;
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 
@@ -27,413 +21,297 @@ namespace YT2MP3Sharp;
 
 public partial class MainWindow : Window
 {
+    private const int Mp3Index = 0;
+    private const int Mp4Index = 1;
+    private const int MaxLogLength = 200_000;
+
+    private readonly AppSettings _settings;
+    private readonly MediaDownloader _downloader;
+
+    private CancellationTokenSource? _downloadCts;
+    private CancellationTokenSource? _qualityCts;
+    private string? _qualitiesLoadedFor;
+
     public MainWindow()
     {
         InitializeComponent();
-        Progressbar = this.FindControl<ProgressBar>("Progressbar");
-        UrlTxt = this.FindControl<TextBox>("UrlTxt");
-        Qualitybox = this.FindControl<ComboBox>("Qualitybox");
-        Formatbox = this.FindControl<ComboBox>("Formatbox");
-        Logpane = this.FindControl<TextBox>("Logpane");
-        Spath = this.FindControl<Label>("Spath");
-        Logpane.Text = "Ready...\n";
+
+        _downloader = new MediaDownloader(AppendLog);
+        _settings = AppSettings.Load();
+
+        Formatbox.SelectedIndex = _settings.Format == MediaFormat.Mp4 ? Mp4Index : Mp3Index;
+        ShowOutputFolder();
+
         Formatbox.SelectionChanged += Formatbox_SelectionChanged;
+        UrlTxt.LostFocus += UrlTxt_LostFocus;
+        UrlTxt.KeyDown += UrlTxt_KeyDown;
+        Closing += (_, _) => _downloadCts?.Cancel();
 
+        AppendLog("Ready.");
     }
-    public async Task SelectFolder(Window parentWindow)
+
+    private bool IsBusy => _downloadCts is not null;
+
+    private MediaFormat SelectedFormat => Formatbox.SelectedIndex == Mp4Index ? MediaFormat.Mp4 : MediaFormat.Mp3;
+
+    // ----- Event handlers ---------------------------------------------------------------
+
+    private async void DownloadBtn_Click(object? sender, RoutedEventArgs e) => await StartDownloadAsync();
+
+    private void CancelBtn_Click(object? sender, RoutedEventArgs e)
     {
-        // Create an instance of FilePickerFolderOptions
-        var options = new FolderPickerOpenOptions
+        if (_downloadCts is null)
+            return;
+
+        _downloadCts.Cancel();
+        CancelBtn.IsEnabled = false;
+        StatusTxt.Text = "Cancelling...";
+    }
+
+    private async void SelectFolderButton_Click(object? sender, RoutedEventArgs e) => await PickOutputFolderAsync();
+
+    private async void UrlTxt_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+            return;
+
+        e.Handled = true;
+        await StartDownloadAsync();
+    }
+
+    private async void UrlTxt_LostFocus(object? sender, RoutedEventArgs e) => await RefreshQualitiesAsync();
+
+    private async void Formatbox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_settings.Format != SelectedFormat)
         {
-            Title = "Select a Folder",
-            AllowMultiple = false
-        };
-
-        // Show the folder picker dialog
-        var result = await parentWindow.StorageProvider.OpenFolderPickerAsync(options);
-
-
-        if (result != null && result.Count > 0)
-        {
-            // Handle the selected folder
-            var selectedFolder = result[0];
-            string confPath = System.AppDomain.CurrentDomain.BaseDirectory;
-            await using (StreamWriter outputFile = new StreamWriter(Path.Combine(confPath, "settings.dat")))
-            {
-                await outputFile.WriteAsync(selectedFolder.Path.LocalPath);
-                await Dispatcher.UIThread.InvokeAsync(() => Spath.Content = selectedFolder.Path.LocalPath);
-            }
-
+            _settings.Format = SelectedFormat;
+            SaveSettings();
         }
-    }
-    private async void SelectFolderButton_Click(object sender, RoutedEventArgs e)
-    {
-       await SelectFolder(this);
-        
+
+        await RefreshQualitiesAsync();
     }
 
-    private async void Downloadbtn(object sender, RoutedEventArgs args)
-    {
+    // ----- Download ---------------------------------------------------------------------
 
-        string path = File.ReadAllText($"{System.AppDomain.CurrentDomain.BaseDirectory}settings.dat");
-        string url = UrlTxt.Text;
-        await Dispatcher.UIThread.InvokeAsync(() => Progressbar.Value = 0);
-        
-        if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(path)){
-            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "Please fill in all the fields and select your Saving Path\n");
+    private async Task StartDownloadAsync()
+    {
+        if (IsBusy)
+            return;
+
+        var url = UrlTxt.Text?.Trim() ?? string.Empty;
+        if (url.Length == 0)
+        {
+            AppendLog("Paste a YouTube video or playlist link first.");
             return;
         }
 
-        string format = (Formatbox.SelectedItem as ComboBoxItem)?.Content?.ToString();
-        string selectedQuality = Qualitybox.SelectedItem as string;
-        try 
+        var isPlaylist = MediaDownloader.IsPlaylistUrl(url);
+        if (!isPlaylist && !MediaDownloader.IsVideoUrl(url))
         {
-            if (url.Contains("playlist"))
-            {
-                await DownloadPlaylistAsync(url, path, format);
-            }
-            else 
-            {
-                await DownloadVideoAsync(url, path, format, selectedQuality);
-            }
+            AppendLog("That doesn't look like a YouTube video or playlist link.");
+            return;
         }
 
+        var ffmpegPath = MediaDownloader.FindFfmpeg();
+        if (ffmpegPath is null)
+        {
+            AppendLog("ffmpeg was not found. Install it, or put the ffmpeg executable next to this app.");
+            return;
+        }
+
+        var outputFolder = _settings.OutputFolder;
+        if (string.IsNullOrEmpty(outputFolder) || !Directory.Exists(outputFolder))
+        {
+            AppendLog("Choose a folder to save to.");
+            outputFolder = await PickOutputFolderAsync();
+            if (outputFolder is null)
+                return;
+        }
+
+        var format = SelectedFormat;
+        var quality = format == MediaFormat.Mp4 && !isPlaylist ? Qualitybox.SelectedItem as string : null;
+
+        var cts = new CancellationTokenSource();
+        _downloadCts = cts;
+        SetBusy(true);
+        Progressbar.Value = 0;
+        StatusTxt.Text = "Starting...";
+
+        try
+        {
+            // Task.Run keeps the stream-manifest parsing off the UI thread. The Progress<T>
+            // objects are created here, on the UI thread, so their callbacks run on it too.
+            if (isPlaylist)
+            {
+                var progress = new Progress<PlaylistProgress>(p =>
+                {
+                    Progressbar.Value = p.Total == 0 ? 0 : 100.0 * p.Completed / p.Total;
+                    StatusTxt.Text = $"{p.Completed} / {p.Total}";
+                });
+
+                var result = await Task.Run(
+                    () => _downloader.DownloadPlaylistAsync(url, outputFolder, format, ffmpegPath, progress, cts.Token),
+                    cts.Token);
+
+                AppendLog(result.Failed == 0
+                    ? $"Playlist finished: {result.Succeeded} downloaded."
+                    : $"Playlist finished: {result.Succeeded} downloaded, {result.Failed} failed.");
+                StatusTxt.Text = result.Failed == 0 ? "Done" : $"{result.Failed} failed";
+            }
+            else
+            {
+                var progress = new Progress<double>(p =>
+                {
+                    Progressbar.Value = p * 100;
+                    StatusTxt.Text = $"{p:P0}";
+                });
+
+                await Task.Run(
+                    () => _downloader.DownloadVideoAsync(url, outputFolder, format, quality, ffmpegPath, progress, cts.Token),
+                    cts.Token);
+
+                Progressbar.Value = 100;
+                StatusTxt.Text = "Done";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            AppendLog("Cancelled.");
+            StatusTxt.Text = "Cancelled";
+        }
         catch (Exception ex)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error: {ex.Message}\n");
+            AppendLog($"Error: {ex.Message}");
+            StatusTxt.Text = "Failed";
+        }
+        finally
+        {
+            _downloadCts = null;
+            cts.Dispose();
+            SetBusy(false);
         }
     }
-    private async void Formatbox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+
+    private void SetBusy(bool busy)
     {
-        var selectedFormat = (Formatbox.SelectedItem as ComboBoxItem)?.Content?.ToString();
-        if (selectedFormat == "MP4" && !string.IsNullOrWhiteSpace(UrlTxt.Text))
+        UrlTxt.IsEnabled = !busy;
+        Formatbox.IsEnabled = !busy;
+        SelectFolderBtn.IsEnabled = !busy;
+        DownloadBtn.IsEnabled = !busy;
+        Qualitybox.IsEnabled = !busy && Qualitybox.ItemCount > 0;
+
+        CancelBtn.IsEnabled = busy;
+        CancelBtn.IsVisible = busy;
+    }
+
+    // ----- Quality list -----------------------------------------------------------------
+
+    /// <summary>
+    /// Fills the quality box for a single video in MP4 mode. MP3 and playlists always
+    /// use the best available stream, so the box stays empty and disabled for them.
+    /// </summary>
+    private async Task RefreshQualitiesAsync()
+    {
+        var url = UrlTxt.Text?.Trim() ?? string.Empty;
+        var wanted = SelectedFormat == MediaFormat.Mp4 && MediaDownloader.IsVideoUrl(url);
+
+        if (!wanted)
         {
-            try
-            {
-                var availableQualities = await GetAvailableVideoQualitiesAsync(UrlTxt.Text);
-                Qualitybox.ItemsSource = availableQualities;
-                Qualitybox.SelectedIndex = availableQualities.Count > 0 ? 0 : -1;
-            }
-            catch (Exception ex)
-            {
-                await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error loading video qualities: {ex.Message}\n");
-            }
-        }
-        else
-        {
+            _qualityCts?.Cancel();
+            _qualityCts = null;
+            _qualitiesLoadedFor = null;
             Qualitybox.ItemsSource = null;
-            Qualitybox.SelectedIndex = -1;
+            Qualitybox.IsEnabled = false;
+            return;
         }
-    }
 
-    private async Task<List<string>> GetAvailableVideoQualitiesAsync(string url)
-    {
-        var youtube = new YoutubeClient();
-        var video = await youtube.Videos.GetAsync(url);
-        var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
+        if (url == _qualitiesLoadedFor)
+            return;
 
-        var videoQualities = streamManifest
-            .GetVideoStreams()
-            .Select(s => s.VideoQuality.Label)
-            .Distinct()
-            .ToList();
-        return videoQualities;
-    }
-    private async Task DownloadVideoAsync(string url, string outputPath, string format, string selectedQuality)
-    {
+        _qualityCts?.Cancel();
+        var cts = new CancellationTokenSource();
+        _qualityCts = cts;
+        _qualitiesLoadedFor = url;
+
         try
         {
-            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "Fetching Video Information\n");
-            var youtube = new YoutubeClient();
+            var qualities = await Task.Run(() => _downloader.GetMp4QualitiesAsync(url, cts.Token), cts.Token);
 
-            var video = await youtube.Videos.GetAsync(url);
-            var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
+            // A newer lookup (or a format change) replaced this one while it was running.
+            if (!ReferenceEquals(_qualityCts, cts))
+                return;
 
-            var availableQualities = streamManifest
-                .GetVideoStreams()
-                .Select(s => s.VideoQuality.Label)
-                .Distinct()
-                .ToList();
-
-
-            if (!availableQualities.Contains(selectedQuality) && format != "MP3")
-            {
-                //selectedQuality = availableQualities.FirstOrDefault();
-                await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Selected quality {selectedQuality} not available. Falling back to default quality\n");
-            }
-
-
-            switch (format)
-            {
-                case "MP4":
-                {
-                        var audioStreamInfo = streamManifest
-                            .GetAudioStreams()
-                            .Where(s => s.Container == Container.Mp4)
-                            .GetWithHighestBitrate();
-
-                        var videoStreamInfo = streamManifest
-                            .GetVideoStreams()
-                            .Where(s => s.Container == Container.Mp4 && s.VideoQuality.Label == selectedQuality)
-                            .FirstOrDefault();
-
-                        if (videoStreamInfo != null && audioStreamInfo != null)
-                        {
-                            var sanitizedTitle = SanitizeFileName(video.Title);
-                            var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
-                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Selected Quality: {selectedQuality}\n");
-                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Downloading: {video.Title}\n");
-                            var streamInfos = new IStreamInfo[] { audioStreamInfo, videoStreamInfo };
-                            var conversionRequest = new ConversionRequestBuilder(finalFilePath)
-                                .SetFFmpegPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"))
-                                .Build();
-                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Muxing: {video.Title}\n");
-                            await youtube.Videos.DownloadAsync(streamInfos, conversionRequest);
-                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Download complete: {finalFilePath}\n");
-                        }
-                        else
-                        {
-                            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "No suitable stream found\n");
-                        }
-
-                        break;
-
-
-                }
-                case "MP3":
-                {
-                    var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-
-                    if (streamInfo != null)
-                    {
-                        var sanitizedTitle = SanitizeFileName(video.Title);
-                        var tempFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
-                        var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp3");
-
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Downloading: {video.Title}\n");
-                        await youtube.Videos.Streams.DownloadAsync(streamInfo, tempFilePath);
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Converting: {video.Title}\n");
-
-                        await Task.Run(() =>ConvertToMp3(tempFilePath, finalFilePath));
-
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Download Complete: {finalFilePath}\n");
-                    }
-                    else
-                    {
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "No suitable audio stream found! \n");
-                    }
-
-                    break;
-                }
-            }
+            Qualitybox.ItemsSource = qualities;
+            Qualitybox.SelectedIndex = qualities.Count > 0 ? 0 : -1;
+            Qualitybox.IsEnabled = !IsBusy && qualities.Count > 0;
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded, nothing to do.
         }
         catch (Exception ex)
         {
-            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error: {ex.Message}\n");
+            if (ReferenceEquals(_qualityCts, cts))
+            {
+                _qualitiesLoadedFor = null;
+                AppendLog($"Couldn't load the available qualities: {ex.Message}");
+            }
         }
     }
-    private async Task DownloadPlaylistAsync(string playlistUrl, string outputPath, string format)
+
+    // ----- Save folder and settings -----------------------------------------------------
+
+    private async Task<string?> PickOutputFolderAsync()
     {
-        try
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += "Fetching playlist information...\n");
-            var youtube = new YoutubeClient();
-            var playlist = await youtube.Playlists.GetAsync(playlistUrl);
-            var videos = youtube.Playlists.GetVideosAsync(playlist.Id);
+            Title = "Choose where to save downloads",
+            AllowMultiple = false
+        });
 
-            int videoCount = 0;
-            await foreach (var video in videos)
-            {
-                videoCount++;
-            }
-            await Dispatcher.UIThread.InvokeAsync(() => Progressbar.Maximum = videoCount);
-            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Found {videoCount} videos\n");
+        var path = folders.FirstOrDefault()?.TryGetLocalPath();
+        if (string.IsNullOrEmpty(path))
+            return null;
 
-            var tasks = new ConcurrentBag<Task>();
-            var throttler = new SemaphoreSlim(3); // TO DO SETTINGS CONCURENT DOWNLOADS
-
-            await foreach (var video in youtube.Playlists.GetVideosAsync(playlist.Id))
-            {
-                await throttler.WaitAsync();
-                tasks.Add(Task.Run(async () =>
-                {
-                    try
-                    {
-                        var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
-
-                        switch (format)
-                        {
-                            case "MP4":
-                            {
-                                var audioStreamInfo = streamManifest
-                                    .GetAudioStreams()
-                                    .Where(s => s.Container == Container.Mp4)
-                                    .GetWithHighestBitrate();
-                                var videoStreamInfo = streamManifest
-                                    .GetVideoStreams()
-                                    .Where(s => s.Container == Container.Mp4)
-                                    .GetWithHighestVideoQuality();
-
-                                    if (audioStreamInfo != null && videoStreamInfo != null)
-                                {
-                                    var sanitizedTitle = SanitizeFileName(video.Title);
-                                    var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
-                                    await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Downloading: {video.Title}\n");
-                                    var streamInfos = new IStreamInfo[] { audioStreamInfo, videoStreamInfo };
-                                    var conversionRequest = new ConversionRequestBuilder(finalFilePath)
-                                        .SetFFmpegPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"))
-                                        .Build();
-                                    await youtube.Videos.DownloadAsync(streamInfos, conversionRequest);
-                                    await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Download complete: {finalFilePath}\n");
-
-                                }
-                                else
-                                {
-                                    await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"No suitable stream found! for {video.Title}\n");
-                                }
-
-                                break;
-                            }
-                            case "MP3":
-                            {
-                                var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-
-                                if (streamInfo != null)
-                                {
-                                    var sanitizedTitle = SanitizeFileName(video.Title);
-                                    var tempFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp4");
-                                    var finalFilePath = Path.Combine(outputPath, $"{sanitizedTitle}.mp3");
-                                    await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Download: {video.Title}\n");
-
-                                    // download Async
-                                    await youtube.Videos.Streams.DownloadAsync(streamInfo, tempFilePath);
-                                    await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Converting: {video.Title}\n");
-
-                                    // converting to MP3
-                                    await Task.Run(() => ConvertToMp3(tempFilePath, finalFilePath));
-                                    await Dispatcher.UIThread.InvokeAsync(() => {
-                                        Logpane.Text += $"Download complete: {finalFilePath}\n";
-                                        Logpane.CaretIndex = Logpane.Text.Length;});
-                                }
-                                else 
-                                {
-                                    await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"No suitable audio stream found for: {video.Title}\n");
-                                }
-
-                                break;
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error Downloading: {video.Title} > {ex.Message}\n");
-                    }
-                    finally
-                    {
-                        throttler.Release();
-                    }
-                    await Dispatcher.UIThread.InvokeAsync(() => Progressbar.Value += 1);
-                }));
-            }
-            await Task.WhenAll(tasks); 
-        }
-        catch (Exception ex) 
-        { 
-            await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error: {ex.Message}\n"); 
-        }
+        _settings.OutputFolder = path;
+        SaveSettings();
+        ShowOutputFolder();
+        return path;
     }
 
-    private async void UrlTxt_LostFocus(object sender, RoutedEventArgs e)
+    private void ShowOutputFolder()
     {
-        if (!string.IsNullOrEmpty(UrlTxt.Text))
-        try
-            {
-                var availableQualities = await GetAvailableVideoQualitiesAsync(UrlTxt.Text);
-                Qualitybox.ItemsSource = availableQualities;
-                Qualitybox.SelectedIndex = 0;
-            }
-        catch (Exception ex)
-            {
-                await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"Error loading video qualities: {ex.Message}\n");
-            }
+        var folder = _settings.OutputFolder;
+        var hasFolder = !string.IsNullOrEmpty(folder);
+
+        Spath.Text = hasFolder ? folder : "No save folder selected";
+        ToolTip.SetTip(Spath, hasFolder ? folder : null);
     }
 
-    private void ConvertToMp3(string inputFilePath, string outputFilePath)
+    private void SaveSettings()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        var error = _settings.Save();
+        if (error is not null)
+            AppendLog($"Couldn't save settings: {error}");
+    }
+
+    // ----- Log --------------------------------------------------------------------------
+
+    /// <summary>Safe to call from any thread.</summary>
+    private void AppendLog(string message)
+    {
+        if (!Dispatcher.UIThread.CheckAccess())
         {
-            var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe");
-            int coreCount = Environment.ProcessorCount;
-
-            var processStartInfo = new ProcessStartInfo
-            {
-                FileName = ffmpegPath,
-                Arguments =
-                    $"-i \"{inputFilePath}\" -threads {coreCount} -vn -ar 44100 -ac 2 -b:a 320k \"{outputFilePath}\" -y",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using (var process = new Process())
-            {
-                process.StartInfo = processStartInfo;
-                process.OutputDataReceived += async (sender, args) =>
-                {
-                    if (args.Data != null)
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"{args.Data}\n");
-                };
-                process.ErrorDataReceived += async (sender, args) =>
-                {
-                    if (args.Data != null)
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"{args.Data}\n");
-                };
-                process.Start();
-                process.WaitForExit();
-            }
-
-            File.Delete(inputFilePath); // Deletes File After Conversion!
+            Dispatcher.UIThread.Post(() => AppendLog(message));
+            return;
         }
-        else
-        {
-            var ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg");
-            int coreCount = Environment.ProcessorCount;
 
-            var processStartInfo = new ProcessStartInfo
-            {
-                FileName = ffmpegPath,
-                Arguments =
-                    $"-i \"{inputFilePath}\" -threads {coreCount} -vn -ar 44100 -ac 2 -b:a 320k \"{outputFilePath}\" -y",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+        var text = $"{Logpane.Text}[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}";
+        if (text.Length > MaxLogLength)
+            text = text[^(MaxLogLength / 2)..];
 
-            using (var process = new Process())
-            {
-                process.StartInfo = processStartInfo;
-                process.OutputDataReceived += async (sender, args) =>
-                {
-                    if (args.Data != null)
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"{args.Data}\n");
-                };
-                process.ErrorDataReceived += async (sender, args) =>
-                {
-                    if (args.Data != null)
-                        await Dispatcher.UIThread.InvokeAsync(() => Logpane.Text += $"{args.Data}\n");
-                };
-                process.Start();
-                process.WaitForExit();
-            }
-
-            File.Delete(inputFilePath); // Deletes File After Conversion!
-        }
+        Logpane.Text = text;
+        Logpane.CaretIndex = text.Length;
     }
-
-    private static string SanitizeFileName(string fileName)
-    {
-        // Sanitizes File Names!
-        var invalidChars = Path.GetInvalidFileNameChars();
-        var sanitizedTitle = new string(fileName.Where(ch => !invalidChars.Contains(ch)).ToArray());
-        return sanitizedTitle;
-    }
-   
 }
