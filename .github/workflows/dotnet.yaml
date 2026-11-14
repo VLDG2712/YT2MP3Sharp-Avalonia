@@ -2,6 +2,8 @@ name: myworkflow
 on:
   push:
     branches: [ "main" ]
+permissions:
+    contents: write
 jobs:
     build:
         name: Publish Binaries
@@ -9,6 +11,15 @@ jobs:
 
         steps:
             - uses: actions/checkout@v4
+            # The release tag comes from <Version> in the csproj, so bumping the
+            # version there is the only step needed to publish a new release.
+            - name: Read version from csproj
+              id: version
+              shell: pwsh
+              run: |
+                $version = "$(([xml](Get-Content YT2MP3Sharp.csproj)).Project.PropertyGroup.Version)".Trim()
+                if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "Unexpected version '$version' in YT2MP3Sharp.csproj" }
+                "version=$version" >> $env:GITHUB_OUTPUT
             - name: Setup .NET
               uses: actions/setup-dotnet@v4
               with:
@@ -32,7 +43,8 @@ jobs:
                 repo_token: ${{ secrets.GITHUB_TOKEN }}
                 file: publish.zip
                 asset_name: YT2MP3Sharp.zip
-                tag: "1.0.2"
+                tag: ${{ steps.version.outputs.version }}
+                release_name: YT2MP3Sharp ${{ steps.version.outputs.version }}
                 overwrite: true
-                body: "Update 1.0.2 | Updated to include new version of Youtube Explode 6.5.6 and added FFMpeg to zip"
+                body: "YT2MP3Sharp ${{ steps.version.outputs.version }} for Windows, ffmpeg included."
                         
